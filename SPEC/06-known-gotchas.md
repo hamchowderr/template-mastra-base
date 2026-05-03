@@ -91,6 +91,14 @@ The scaffold sets these correctly. **Do not change them** — older settings cau
 
 The recommended composite store config uses `await new DuckDBStore().getStore('observability')` at module scope. This requires `"module": "ES2022"` (which is set). If you see "top-level await is not supported", check tsconfig.
 
+## DuckDB requires glibc
+
+`@mastra/duckdb` ships native binaries compiled against glibc. These segfault on Alpine Linux (musl libc) even with `gcompat` installed.
+
+The Dockerfile uses `node:22-slim` (Debian-based, glibc) instead of `node:22-alpine` (musl). This costs ~500MB in image size but is required for runtime stability. Do not "optimize" by switching to Alpine — the container will crash on first observability span.
+
+If image size is critical, swap `DuckDBStore` for `LibSQLStore` in the observability domain in `src/mastra/index.ts`.
+
 ## DuckDB on macOS / unusual platforms
 
 `@mastra/duckdb` ships native binaries. On macOS (especially Apple Silicon), it should "just work" via `npm install`. On unusual platforms (e.g., Alpine in Docker), you may need to configure platform-specific binaries — this is why the Dockerfile installs `gcompat`.

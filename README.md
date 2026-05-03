@@ -76,6 +76,7 @@ template-mastra-base/
 |---|---|
 | `npm run dev` | Start Mastra Studio at localhost:4111 |
 | `npm run build` | Bundle for production (output → `.mastra/output/`) |
+| `npm run start` | Start production server (no Studio) |
 | `npm run eval` | Run offline eval gate against all cases in the dataset |
 | `npm run typecheck` | TypeScript type check (zero-emit) |
 | `npm run score:list` | List registered scorers |
@@ -125,17 +126,35 @@ curl http://localhost:4111/health
 
 ---
 
+## Deployment Notes
+
+### Docker image size
+
+The production image is ~676MB. This is larger than typical Node.js Docker images because:
+
+- The base is `node:22-slim` (Debian, glibc) instead of `node:22-alpine` (musl)
+- DuckDB ships native binaries that segfault on musl libc, even with `gcompat`
+- DuckDB is required by `@mastra/observability` for trace storage
+
+If you need a smaller image, the path is to swap DuckDB for `LibSQLStore` in the observability domain (see `src/mastra/index.ts`). Trade-off: slower trace queries in Mastra Studio, especially under load.
+
+For typical VPS deployments (Hetzner, DigitalOcean, etc.) the 676MB size is not a problem — pulls take seconds and storage is cheap. Only optimize if you're targeting Lambda, Cloud Run cold starts, or memory-constrained environments under 1GB.
+
+---
+
 ## Common Gotchas
 
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Invalid environment variables` on boot | Missing or malformed `.env` | Check each var listed in the error against `.env.example` |
 | `ECONNREFUSED 127.0.0.1:54322` | Local Supabase not running | `npx supabase start` |
-| Docker container crashes (SIGSEGV) | DuckDB requires glibc, not musl | Use `node:22-slim`, not `node:22-alpine` |
+| Docker container crashes (SIGSEGV) | DuckDB requires glibc, not musl | Use `node:22-slim`, not `node:22-alpine` — see Deployment Notes |
 | `ECONNREFUSED` inside Docker | `127.0.0.1` in DB URL | Replace with `host.docker.internal` |
 | Agent not listed in Studio | Not registered in `mastra.agents` | Add to `src/mastra/index.ts` |
-| Eval completeness scorer low | Scorer measures prose coverage | Threshold ~0.3 is correct for extraction agents |
 | Storage init error about missing `id` | `PostgresStore`/`LibSQLStore` requires `id` field | Pass `id: 'mastra-storage'` to the constructor |
+| PostHog telemetry noise in restricted networks | Mastra runtime phones home on startup | Set `MASTRA_TELEMETRY_DISABLED=1` in `.env` |
+| DB connection errors at scale | Direct Supabase connection has limited slots | Use the **session pooler** URL from Supabase dashboard (Project Settings → Database → Connection string → Session pooler) |
+| Pino transport error in Docker | `pino-pretty` missing from production deps | Ensure it's in `dependencies`, not `devDependencies`, in any packages you add |
 
 ---
 

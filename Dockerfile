@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
+# Use node:22-slim (Debian/glibc), NOT node:22-alpine (musl).
+# DuckDB native modules segfault on Alpine even with gcompat.
+# This makes the image ~676MB instead of ~150MB. See README "Deployment Notes".
 # ─── Stage 1: build ───────────────────────────────────────────────
 FROM node:22-slim AS build
 WORKDIR /app

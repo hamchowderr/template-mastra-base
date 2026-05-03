@@ -75,13 +75,13 @@ Dataset files: `src/mastra/scorers/datasets/<agent-name>.json`.
 
 Every scorer file exports named scorers. Every dataset file has `agentId`, `thresholds`, and `cases` — minimum 5 cases, at least 1 anti-hallucination case.
 
-Known calibration: the prebuilt `completenessScorer` measures how much of the input prose is "covered" by the output. For structured-extraction agents, scores of 0.3–0.5 are normal. Set thresholds at ~0.3, not 0.7.
-
 Correct import paths for prebuilt scorers:
 ```typescript
-import { createHallucinationScorer, createCompletenessScorer } from '@mastra/evals/scorers/prebuilt';
+import { createHallucinationScorer, createPromptAlignmentScorerLLM } from '@mastra/evals/scorers/prebuilt';
 // NOT from '@mastra/evals/scorers/llm' or '@mastra/evals/scorers/code'
 ```
+
+Note: `createPromptAlignmentScorerLLM` with `evaluationMode: 'system'` requires system-prompt data in the inline scorer input. Register it on the agent only without that option, or run it manually in eval.ts. The default (no `evaluationMode`) works correctly for both inline and manual use.
 
 ---
 
@@ -105,7 +105,7 @@ new PostgresStore({ id: 'mastra-storage', connectionString: env.SUPABASE_DB_URL 
 - **Never read `process.env` directly** — use `env` from `src/lib/env.ts`
 - **Never construct an AI SDK client before `configureAIMock()`** — AIMock will be bypassed silently
 - **Never set `ANTHROPIC_BASE_URL = AIMOCK_URL` bare** — `@ai-sdk/anthropic` appends `/messages`, so set it to `${AIMOCK_URL}/v1` to land at `/v1/messages` (where AIMock actually listens)
-- **Never use `node:22-alpine`** in the Dockerfile — DuckDB will SIGSEGV due to musl libc
+- **Never change the Dockerfile base to `node:22-alpine`** or any musl-based image — DuckDB native binaries will SIGSEGV at runtime. If you genuinely need a smaller image, swap `DuckDBStore` for `LibSQLStore` in the observability domain in `src/mastra/index.ts` instead. See README "Deployment Notes".
 - **Never add a new env var without updating `.env.example`** — new devs won't know it exists
 - **Never skip the Zod schema for a new env var** — process will start with undefined values silently
 - **Never import from `src/mastra/` in `src/lib/`** — creates circular dependency risk

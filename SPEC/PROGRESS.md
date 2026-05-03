@@ -1,5 +1,27 @@
 # Build Progress
 
+## Polish complete
+- Status: complete
+- All 5 polish steps:
+  - 01 Manual Studio test: pass
+  - 02 GitHub publish & CI: pass — repo at https://github.com/hamchowderr/template-mastra-base
+  - 03 Provisioning test: pass
+  - 04 Completeness scorer: replaced with `createPromptAlignmentScorerLLM` (eval gate passes: hallucination 1.000 ≥ 0.85, promptAlignment 0.940 ≥ 0.7, urgency 0.800 ≥ 0.8, 5/5 field checks)
+  - 05 Documentation updates: pass
+- Outstanding issues: none
+- Recommended next action: ready to start child templates (rag, voice, chat, nca)
+
+---
+
+## Polish 05: Documentation Updates
+- Status: complete
+- Files touched: `README.md`, `Dockerfile`, `AGENTS.md`, `SPEC/06-known-gotchas.md`
+- Image size note: documented in 4 places (README "Deployment Notes" section, Dockerfile comment, AGENTS.md never-do entry, SPEC/06-known-gotchas.md new section)
+- README sanity check: fixed 4 items — added `start` script to table; removed stale completeness scorer row; added PostHog, Supabase pooler, and Pino transport rows to Common Gotchas; updated DuckDB row to link to Deployment Notes
+- Notes: AGENTS.md scorer conventions updated to remove stale `createCompletenessScorer` reference; replaced with `createPromptAlignmentScorerLLM` and inline/manual usage note
+
+---
+
 ## Polish 02: GitHub Publish & CI
 - Status: complete
 - Repo URL: https://github.com/hamchowderr/template-mastra-base
