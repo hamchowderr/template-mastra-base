@@ -63,21 +63,25 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      # AIMock requires Node >=24; set it up first, then reinstall Node 22 for the project
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: CopilotKit/aimock@v1
+        with:
+          config: ./aimock.json
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      - uses: CopilotKit/aimock@v1
-        with:
-          config: ./aimock.json
       - name: Create empty .env for CI
         run: touch .env
       - name: Run eval gate
         run: npm run eval
         env:
           USE_AIMOCK: 'true'
-          AIMOCK_URL: http://localhost:4010
+          AIMOCK_URL: http://127.0.0.1:4010
           MASTRA_TELEMETRY_DISABLED: '1'
           APP_SECRET: ${{ secrets.CI_APP_SECRET }}
           SUPABASE_URL: https://stub.supabase.co
