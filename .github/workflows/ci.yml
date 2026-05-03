@@ -88,6 +88,7 @@ jobs:
         env:
           USE_AIMOCK: 'true'
           AIMOCK_URL: http://127.0.0.1:4010
+          OPENAI_BASE_URL: http://127.0.0.1:4010/v1
           MASTRA_TELEMETRY_DISABLED: '1'
           APP_SECRET: ${{ secrets.CI_APP_SECRET }}
           SUPABASE_URL: https://stub.supabase.co
