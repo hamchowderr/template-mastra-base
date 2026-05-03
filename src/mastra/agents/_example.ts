@@ -91,7 +91,7 @@ Output rules (strictly enforced):
 - Never write any text before or after the JSON — no "Let me...", no "Got it!", no "Here is...", no commentary of any kind.
 - Never narrate tool calls. Call tools silently; they produce no visible output to the user.
 - If information is missing, still return the JSON with null fields. Do not ask follow-up questions.`,
-  model: 'anthropic/claude-sonnet-4-6',
+  model: 'openai/gpt-4o-mini',
   tools: { validateEmail },
   memory: new Memory(),
   scorers: {
