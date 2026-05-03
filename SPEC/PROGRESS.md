@@ -1,5 +1,23 @@
 # Build Progress
 
+## Polish 02: GitHub Publish & CI
+- Status: complete
+- Repo URL: https://github.com/hamchowderr/template-mastra-base
+- CI runs (run 25267861015):
+  - typecheck: ✓ 24s
+  - build: ✓ 41s
+  - eval: ✓ 47s
+  - docker: ✓ 1m23s
+- Tag: v0.1.0 pushed
+- Notes:
+  - Agent switched from Anthropic to OpenAI (`openai.chat('gpt-4o-mini')`) — AIMock only supports OpenAI-compatible endpoints (`/v1/chat/completions`), not Anthropic (`/v1/messages`)
+  - Added `@ai-sdk/openai` as direct dep so `openai.chat()` call compiles. Direct `import { openai }` reads `OPENAI_BASE_URL` at module load time (before `configureAIMock()` runs), so fixed by injecting `OPENAI_BASE_URL: http://127.0.0.1:4010/v1` directly in CI env vars
+  - AIMock Docker image requires `-f /fixtures` flag to locate fixture files — omitting it causes "No fixture matched" for every request despite correct volume mount
+  - Three CI fixes across three pushes before green: (1) switch to OpenAI, (2) set OPENAI_BASE_URL in CI env, (3) add `-f /fixtures` to docker run command
+
+---
+
+
 ## Polish 01: Manual Studio Test
 - Status: complete
 - Steps 1-8: all pass (Step 8: partial — see notes)
