@@ -40,6 +40,20 @@
   - Studio `type` action for textarea did not handle `@` or `—` chars correctly; needed JS workaround (`HTMLTextAreaElement.prototype.value` setter + input event) to populate field
 - Issues to fix: none blocking — all functional behavior correct
 
+## Polish 03: Provisioning Test
+- Status: complete
+- Provisioning command: `npx degit hamchowderr/template-mastra-base test-client-001` (see notes)
+- Project boot: not tested via dev server (headless environment)
+- typecheck: pass
+- eval: pass (AIMock, 5/5 field checks)
+- Customization (new agent added): pass — testAgent added, typecheck clean, both agents registered
+- Notes:
+  - `create-mastra --template <repo>` does NOT support arbitrary GitHub repos — only curated slugs. Provisioning must use `npx degit <org>/template-mastra-base` instead. Spec was wrong about this.
+  - Base `.env` was missing `OPENAI_API_KEY` after model switch from Anthropic to OpenAI (Phase 6 regression). Added blank placeholder; user must fill in real key for live eval.
+  - `configureAIMock()` sets `OPENAI_BASE_URL` too late for the direct `@ai-sdk/openai` import (reads env at module load time). Local AIMock eval requires `OPENAI_BASE_URL=http://localhost:4010/v1` set in shell or `.env` BEFORE process start. Documented in `.env.example`.
+  - Provisioning time: ~30s (degit) + ~60s (npm install)
+- Provisioning time end-to-end: ~2 min
+
 ---
 
 ## Phase 12: Final Verification
