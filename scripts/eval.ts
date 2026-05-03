@@ -7,7 +7,7 @@ import { env } from '../src/lib/env';
 import { LeadSchema } from '../src/mastra/agents/_example';
 import {
   hallucinationScorer,
-  completenessScorer,
+  promptAlignmentScorer,
   urgencyScorer,
 } from '../src/mastra/scorers/_example.scorers';
 
@@ -72,7 +72,7 @@ console.log(bold(`\n🧪 Eval: ${dataset.agentId} — ${dataset.cases.length} ca
 const results: CaseResult[] = [];
 const scoreTotals: Record<string, number[]> = {
   hallucination: [],
-  completeness: [],
+  promptAlignment: [],
   urgency: [],
 };
 
@@ -113,13 +113,13 @@ for (const evalCase of dataset.cases) {
 
   if (scoringInput !== undefined && scoringOutput !== undefined) {
     try {
-      const [hallResult, compResult, urgResult] = await Promise.all([
+      const [hallResult, alignResult, urgResult] = await Promise.all([
         hallucinationScorer.run({ input: scoringInput as any, output: scoringOutput as any }),
-        completenessScorer.run({ input: scoringInput as any, output: scoringOutput as any }),
+        promptAlignmentScorer.run({ input: scoringInput as any, output: scoringOutput as any }),
         urgencyScorer.run({ input: scoringInput as any, output: scoringOutput as any }),
       ]);
       scores.hallucination = hallResult.score;
-      scores.completeness = compResult.score;
+      scores.promptAlignment = alignResult.score;
       scores.urgency = urgResult.score;
     } catch (err) {
       // Scorer errors don't fail the case — log and continue

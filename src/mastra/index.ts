@@ -13,11 +13,11 @@ import { DuckDBStore } from '@mastra/duckdb';
 import { MastraCompositeStore } from '@mastra/core/storage';
 import { Observability, DefaultExporter, SensitiveDataFilter } from '@mastra/observability';
 import { leadIntakeAgent } from './agents/_example';
-import { hallucinationScorer, completenessScorer, urgencyScorer } from './scorers/_example.scorers';
+import { hallucinationScorer, promptAlignmentScorer, urgencyScorer } from './scorers/_example.scorers';
 
 export const mastra = new Mastra({
   agents: { leadIntake: leadIntakeAgent },
-  scorers: { hallucinationScorer, completenessScorer, urgencyScorer },
+  scorers: { hallucinationScorer, promptAlignmentScorer, urgencyScorer },
   storage: new MastraCompositeStore({
     id: 'composite-storage',
     default: new PostgresStore({ id: 'mastra-storage', connectionString: env.SUPABASE_DB_URL }),

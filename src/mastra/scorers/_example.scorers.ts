@@ -1,4 +1,4 @@
-import { createHallucinationScorer, createCompletenessScorer } from '@mastra/evals/scorers/prebuilt';
+import { createHallucinationScorer, createPromptAlignmentScorerLLM } from '@mastra/evals/scorers/prebuilt';
 import { createScorer } from '@mastra/core/evals';
 import { getUserMessageFromRunInput, getAssistantMessageFromRunOutput } from '@mastra/evals/scorers/utils';
 import { z } from 'zod';
@@ -7,7 +7,9 @@ export const hallucinationScorer = createHallucinationScorer({
   model: 'anthropic/claude-sonnet-4-6',
 });
 
-export const completenessScorer = createCompletenessScorer();
+export const promptAlignmentScorer = createPromptAlignmentScorerLLM({
+  model: 'anthropic/claude-sonnet-4-6',
+});
 
 export const urgencyScorer = createScorer({
   id: 'lead-urgency-scorer',

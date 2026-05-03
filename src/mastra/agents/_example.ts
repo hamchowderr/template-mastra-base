@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import {
   hallucinationScorer,
-  completenessScorer,
+  promptAlignmentScorer,
   urgencyScorer,
 } from '../scorers/_example.scorers';
 
@@ -55,13 +55,14 @@ export type Lead = z.infer<typeof LeadSchema>;
 const validateEmail = createTool({
   id: 'validateEmail',
   description: 'Validate and normalize an email address',
-  inputSchema: z.object({ email: z.string() }),
+  inputSchema: z.object({ email: z.string().nullable() }),
   outputSchema: z.object({
     valid: z.boolean(),
     normalized: z.string().nullable(),
     reason: z.string().nullable(),
   }),
   execute: async ({ email }) => {
+    if (!email) return { valid: false, normalized: null, reason: 'No email provided' };
     const result = z.string().email().safeParse(email.trim().toLowerCase());
     if (!result.success) {
       return {
@@ -98,10 +99,6 @@ Output rules (strictly enforced):
   scorers: {
     hallucination: {
       scorer: hallucinationScorer,
-      sampling: { type: 'ratio', rate: 1 },
-    },
-    completeness: {
-      scorer: completenessScorer,
       sampling: { type: 'ratio', rate: 1 },
     },
     urgency: {

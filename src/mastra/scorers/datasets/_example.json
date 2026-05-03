@@ -2,7 +2,7 @@
   "agentId": "leadIntake",
   "thresholds": {
     "hallucination": 0.85,
-    "completeness": 0.3,
+    "promptAlignment": 0.7,
     "urgency": 0.8
   },
   "cases": [
