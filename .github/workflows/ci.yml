@@ -63,18 +63,20 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      # AIMock requires Node >=24; set it up first, then reinstall Node 22 for the project
+      # AIMock requires Node >=24; use 24 for this entire job (eval script is compatible)
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: CopilotKit/aimock@v1
-        with:
-          config: ./aimock.json
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Install and start AIMock
+        run: |
+          npm install -g @copilotkit/aimock@latest
+          aimock --config ./aimock.json --port 4010 --host 127.0.0.1 &
+          echo $! > /tmp/aimock.pid
+          echo "Waiting for AIMock on port 4010..."
+          timeout 30 bash -c 'until curl -s http://127.0.0.1:4010/ > /dev/null 2>&1; do sleep 1; done'
+          echo "AIMock ready"
       - name: Create empty .env for CI
         run: touch .env
       - name: Run eval gate
