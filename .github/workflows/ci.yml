@@ -61,6 +61,8 @@ jobs:
       - run: npm ci
       - name: Wait for AIMock
         run: timeout 30 bash -c 'until curl -s http://localhost:4010/ > /dev/null 2>&1; do sleep 1; done'
+      - name: Create empty .env for CI
+        run: touch .env
       - name: Run eval gate
         run: npm run eval
         env:
