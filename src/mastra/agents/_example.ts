@@ -78,6 +78,7 @@ const validateEmail = createTool({
 export const leadIntakeAgent = new Agent({
   id: 'leadIntake',
   name: 'Lead Intake',
+  description: 'Extracts structured contact and intent data from inbound lead messages. Returns email, phone, name, summary, and urgency rating.',
   instructions: `You extract structured lead information from unstructured text.
 
 Inputs may be email bodies, voice transcripts, or form submissions.

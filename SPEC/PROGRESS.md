@@ -1,5 +1,65 @@
 # Build Progress
 
+## Base Polish 03: Verify Reachability + Document
+- Status: complete
+- Endpoints verified:
+  - REST: PASS — `POST /api/agents/leadIntake/generate` → HTTP 200, structured JSON output
+  - A2A agent card: PASS — `GET /api/.well-known/leadIntake/agent-card.json` → JSON agent metadata
+  - A2A execute: PASS — `POST /api/a2a/leadIntake` (JSON-RPC `message/send`) → HTTP 200, task result
+  - MCP: PASS — `POST /api/mcp/base-mcp/mcp` initialize + tools/list → `ask_leadIntake` listed
+  - Studio + Editor: PASS — UI loads, leadIntake visible, Editor tab present
+- README updated: "Reachability" section added after Quickstart
+- AGENTS.md updated: "Reachability conventions" section added before "Things to Never Do"
+- Spec deviations documented:
+  - Spec `GET /a2a/{agentId}` returns Studio HTML (Studio catch-all). Real A2A routes: `GET /api/.well-known/{agentId}/agent-card.json` (card) and `POST /api/a2a/{agentId}` (execute, JSON-RPC)
+  - MCP URL uses server `id` (`base-mcp`), not config key (`baseMcp`) — documented in README and AGENTS.md
+
+---
+
+## Base Polish 02: Configure MCPServer + MastraEditor
+- Status: complete
+- leadIntake description: added — "Extracts structured contact and intent data from inbound lead messages. Returns email, phone, name, summary, and urgency rating."
+- Imports added: MastraEditor (@mastra/editor), MCPServer (@mastra/mcp)
+- Configuration: MCPServer instance (id: base-mcp) + mcpServers and editor fields in Mastra constructor
+- Verification: typecheck passes (exit 0); dev boots; health 200; MCP initialize returns `{"name":"template-mastra-base","version":"0.1.0"}`; leadIntake agent confirmed via API
+- Spec deviations:
+  - MCPServerConfig requires `tools: ToolsInput` (required field, not optional) — must pass `tools: {}` even when registering agents-only. Spec omitted this.
+  - MCP URL uses server `id` property, not the `mcpServers` config key — actual endpoint is `/api/mcp/base-mcp/mcp` (id), not `/api/mcp/baseMcp/mcp` (key). Spec had wrong URL.
+  - Editor tab presence (Studio UI) not verifiable in headless environment; `editor: new MastraEditor()` confirmed in built output.
+  - Port 4111 was occupied by a foreign Mastra process (template-mastra-nca PID 19556); dev server auto-incremented to 4113+. Not a code issue.
+
+---
+
+## Base Polish 01: Install Packages + Editor Storage
+- Status: complete
+- Installed: @mastra/editor@0.7.22, @mastra/mcp@1.6.0
+- File changed: src/mastra/index.ts — added `editor` key to MastraCompositeStore at top level (sibling of `default`/`domains`)
+- Verification: typecheck passes (exit 0)
+- Spec deviation: spec placed `editor` inside `domains` — that key does not exist in `Partial<StorageDomains>`. Actual API exposes `editor` as a top-level `MastraCompositeStoreConfig` field (`editor?: MastraCompositeStore`). Fixed accordingly.
+- Version note: spec pass threshold `>= 1.24.0` does not match published versions; latest available are editor@0.7.22 and mcp@1.6.0.
+
+---
+
+## Family roadmap (corrected — owner-confirmed Nov 2025)
+
+The four child templates that fork from `template-mastra-base`:
+
+| Template | What it adds |
+|---|---|
+| `template-mastra-rag` | Pgvector enabled in Supabase, document ingestion pipeline (chunking + embedding), retrieval tool, retrieval agent example |
+| `template-mastra-voice` | `@mastra/voice-google-gemini-live` (Gemini Live STS), `@mastra/node-audio` for local mic/speaker testing, voice agent example |
+| `template-mastra-chat` | Next.js frontend, Vercel AI SDK streaming, auth scaffold, chat UI |
+| `template-mastra-nca` | NCA Toolkit env vars (`NCA_BASE_URL`, `NCA_API_KEY`), S3 client, typed Mastra tool wrappers for NCA endpoints (caption, transcribe, ffmpeg compose, S3 upload, job polling) |
+
+**Explicitly NOT in scope** (decided earlier in spec planning):
+- VAPI / LiveKit — external platforms, they call Mastra's auto-generated REST endpoint; no template needed
+- n8n / Make webhooks — same reason
+- Sentry — Mastra Studio's observability is sufficient; can be added later as custom exporter if needed
+
+**Build order**: RAG first (validates pgvector pattern, most independently useful), then voice, chat, nca in any order.
+
+---
+
 ## Polish complete
 - Status: complete
 - All 5 polish steps:
@@ -9,7 +69,7 @@
   - 04 Completeness scorer: replaced with `createPromptAlignmentScorerLLM` (eval gate passes: hallucination 1.000 ≥ 0.85, promptAlignment 0.940 ≥ 0.7, urgency 0.800 ≥ 0.8, 5/5 field checks)
   - 05 Documentation updates: pass
 - Outstanding issues: none
-- Recommended next action: ready to start child templates (rag, voice, chat, nca)
+- Recommended next action: ready to start child templates (rag first, then voice, chat, nca)
 
 ---
 

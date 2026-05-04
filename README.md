@@ -33,6 +33,72 @@ Expected: structured JSON output with all fields populated.
 
 ---
 
+## Reachability
+
+This template's agents are reachable through four standard protocols. Once the dev server is running (`npm run dev`), every registered agent can be called via:
+
+### REST API
+
+Direct HTTP calls. The fastest path for n8n, Make, VAPI, LiveKit, or any HTTP-aware system.
+
+```bash
+curl -X POST http://localhost:4111/api/agents/leadIntake/generate \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Hi, I need a quote"}]}'
+```
+
+For streaming responses, use `/stream` instead of `/generate`. Full OpenAPI spec at `/api/openapi.json`. Interactive docs at `/swagger-ui` (dev only).
+
+### A2A (Agent-to-Agent Protocol)
+
+Google's open standard for agent-to-agent communication. JSON-RPC over HTTP.
+
+```bash
+# Get agent card
+curl http://localhost:4111/api/.well-known/leadIntake/agent-card.json
+
+# Send a message (JSON-RPC)
+curl -X POST http://localhost:4111/api/a2a/leadIntake \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"message/send","params":{"message":{"kind":"message","messageId":"msg-1","role":"user","parts":[{"kind":"text","text":"Hi, I need a quote"}]}}}'
+```
+
+Use this when another agent (in CrewAI, LangGraph, ADK, or any A2A-compatible framework) needs to delegate work to this template's agent.
+
+### MCP (Model Context Protocol)
+
+Anthropic's open standard for agent-tool integration. The template's MCPServer exposes every agent as a callable tool at `/api/mcp/base-mcp/mcp`.
+
+To use from Claude Desktop, add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "template-mastra-base": {
+      "url": "http://localhost:4111/api/mcp/base-mcp/mcp"
+    }
+  }
+}
+```
+
+Each agent appears as a tool named `ask_<agentId>`. Useful during development (call your own agent from your IDE) and for cross-system integration.
+
+### Studio (visual UI + Editor)
+
+Open `http://localhost:4111` in a browser. Studio provides:
+
+- Interactive chat with each agent
+- Trace inspection for every run
+- Metrics dashboard (cost, latency, errors)
+- **Agent Editor**: Non-developers iterate on agent instructions, prompts, and tools without touching code. Changes are versioned with draft/publish workflow.
+
+The Editor is intended for product teams, prompt engineers, or subject-matter experts to tune behavior between deploys. Code-defined agents have read-only `id`, `name`, and `model` fields; everything else is editable through Studio.
+
+For production deployment, secure Studio behind authentication. See [Mastra's auth docs](https://mastra.ai/docs/server/auth/overview).
+
+---
+
 ## File Structure
 
 ```
