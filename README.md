@@ -49,6 +49,21 @@ curl -X POST http://localhost:4111/api/agents/leadIntake/generate \
 
 For streaming responses, use `/stream` instead of `/generate`. Full OpenAPI spec at `/api/openapi.json`. Interactive docs at `/swagger-ui` (dev only).
 
+#### Working memory (persist context per user)
+
+Agents have **working memory** enabled (resource-scoped — see `src/mastra/lib/memory.ts`). For it to persist across a user's conversations, pass `memory.resource` (a stable user ID) and `memory.thread` (the conversation ID) in the body:
+
+```bash
+curl -X POST http://localhost:4111/api/agents/leadIntake/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages":[{"role":"user","content":"Hi, I need a quote"}],
+    "memory":{"resource":"user-alice-456","thread":"conversation-123"}
+  }'
+```
+
+Without `memory.resource`, working memory falls back to thread-only (no cross-conversation persistence). Semantic recall is intentionally off. Storage uses the Mastra instance's Postgres (Supabase), which supports the `mastra_resources` table resource-scoping needs — no extra setup.
+
 ### A2A (Agent-to-Agent Protocol)
 
 Google's open standard for agent-to-agent communication. JSON-RPC over HTTP.

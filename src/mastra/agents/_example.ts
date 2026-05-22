@@ -1,7 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { createTool } from '@mastra/core/tools';
-import { Memory } from '@mastra/memory';
-import { openai } from '@ai-sdk/openai';
+import { createDefaultMemory } from '../lib/memory';
 import { z } from 'zod';
 
 import {
@@ -9,6 +8,7 @@ import {
   promptAlignmentScorer,
   urgencyScorer,
 } from '../scorers/_example.scorers';
+import { defaultInputProcessors, defaultOutputProcessors } from '../lib/processors';
 
 /**
  * # Lead Intake Agent (canonical example)
@@ -94,9 +94,13 @@ Output rules (strictly enforced):
 - Never write any text before or after the JSON — no "Let me...", no "Got it!", no "Here is...", no commentary of any kind.
 - Never narrate tool calls. Call tools silently; they produce no visible output to the user.
 - If information is missing, still return the JSON with null fields. Do not ask follow-up questions.`,
-  model: openai.chat('gpt-4o-mini'),
+  model: 'anthropic/claude-sonnet-4-6',
   tools: { validateEmail },
-  memory: new Memory(),
+  memory: createDefaultMemory(),
+  // Shared safety/hygiene baseline (UnicodeNormalizer + TokenLimiter active;
+  // model-backed guardrails are opt-in — see src/mastra/lib/processors.ts).
+  inputProcessors: defaultInputProcessors,
+  outputProcessors: defaultOutputProcessors,
   scorers: {
     hallucination: {
       scorer: hallucinationScorer,

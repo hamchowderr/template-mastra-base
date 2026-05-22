@@ -49,6 +49,8 @@ In order:
 2. Write `.env.example` per spec.
 3. Write `src/mastra/lib/aimock.ts` per spec.
 4. Write `src/mastra/lib/supabase.ts` per spec.
+5. Write `src/mastra/lib/processors.ts` per spec (UnicodeNormalizer + TokenLimiter active; rest commented).
+6. Write `src/mastra/lib/memory.ts` per spec (`createDefaultMemory()`, working memory on, recall off).
 
 **Checkpoint**: `npm run typecheck` passes. No file at `src/mastra/lib/logger.ts` — that was removed from the plan.
 
@@ -110,7 +112,7 @@ export const mastra = new Mastra({
 
 ## Phase 6: Example agent
 
-1. Write `src/mastra/agents/_example.ts` per spec.
+1. Write `src/mastra/agents/_example.ts` per spec — including `memory: createDefaultMemory()` and the shared `inputProcessors` / `outputProcessors` from `lib/`.
 2. Update `src/mastra/index.ts` to import and register the agent and scorers (uncomment from Phase 4).
 
 **Checkpoint**:
