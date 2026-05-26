@@ -14,6 +14,7 @@ import { MastraCompositeStore } from '@mastra/core/storage';
 import { Observability, DefaultExporter, SensitiveDataFilter } from '@mastra/observability';
 import { MastraEditor } from '@mastra/editor';
 import { MCPServer } from '@mastra/mcp';
+import { MastraJwtAuth } from '@mastra/auth';
 import { leadIntakeAgent } from './agents/_example';
 import { hallucinationScorer, promptAlignmentScorer, urgencyScorer } from './scorers/_example.scorers';
 import { doltTools } from './tools/dolt';
@@ -40,7 +41,16 @@ const mcpServer = new MCPServer({
 // (mastra_ai_spans) -> 23505. Sharing one instance avoids it.
 const pgStore = new PostgresStore({ id: 'mastra-storage', connectionString: env.SUPABASE_DB_URL });
 
+// JWT auth: when MASTRA_JWT_SECRET is set, gate all /api/* routes AND Studio
+// behind a Bearer JWT signed with the shared secret. `/health` and `/api/auth/*`
+// stay public (so healthchecks and the Studio login screen still work). Leave
+// the secret unset for open local dev. Shared-secret only — no external provider.
+const server = env.MASTRA_JWT_SECRET
+  ? { auth: new MastraJwtAuth({ secret: env.MASTRA_JWT_SECRET }) }
+  : undefined;
+
 export const mastra = new Mastra({
+  ...(server ? { server } : {}),
   agents: { leadIntake: leadIntakeAgent },
   scorers: { hallucinationScorer, promptAlignmentScorer, urgencyScorer },
   mcpServers: { baseMcp: mcpServer },

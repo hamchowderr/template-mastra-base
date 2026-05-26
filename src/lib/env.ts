@@ -40,6 +40,11 @@ const envSchema = z
 
     MASTRA_TELEMETRY_DISABLED: z.string().optional(),
     MASTRA_CLOUD_ACCESS_TOKEN: z.string().optional(),
+
+    // Shared HMAC secret for JWT auth (@mastra/auth). When set, the server
+    // gates all /api/* routes AND Studio behind a Bearer JWT signed with this
+    // secret. Leave unset for open local dev. Must be HS256-safe (>=32 chars).
+    MASTRA_JWT_SECRET: z.string().min(32, 'MASTRA_JWT_SECRET must be at least 32 chars').optional(),
   })
   .refine(
     (e) => Boolean(e.ANTHROPIC_API_KEY || e.OPENAI_API_KEY || e.GOOGLE_GENERATIVE_AI_API_KEY),
