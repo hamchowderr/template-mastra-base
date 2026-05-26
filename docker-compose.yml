@@ -63,6 +63,9 @@ services:
     image: dolthub/dolt-sql-server:latest
     restart: unless-stopped
     environment:
+      # allow root from any host on the internal network (default is localhost-only,
+      # which denies the mastra container). Applied on first init only.
+      - DOLT_ROOT_HOST=%
       - DOLT_ROOT_PASSWORD=${DOLT_PASSWORD}
     volumes:
       - doltdata:/var/lib/dolt # versioned DB + full commit history (persist!)
