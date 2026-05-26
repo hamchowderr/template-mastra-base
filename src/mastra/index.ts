@@ -45,12 +45,15 @@ const pgStore = new PostgresStore({ id: 'mastra-storage', connectionString: env.
 // behind a Bearer JWT signed with the shared secret. `/health` and `/api/auth/*`
 // stay public (so healthchecks and the Studio login screen still work). Leave
 // the secret unset for open local dev. Shared-secret only — no external provider.
-const server = env.MASTRA_JWT_SECRET
+// NB: name this `serverConfig`, not `server` — `mastra dev`'s generated entry
+// declares its own top-level `server`, which collides in the bundler ("symbol
+// 'server' has already been declared"). `mastra build` doesn't hit it.
+const serverConfig = env.MASTRA_JWT_SECRET
   ? { auth: new MastraJwtAuth({ secret: env.MASTRA_JWT_SECRET }) }
   : undefined;
 
 export const mastra = new Mastra({
-  ...(server ? { server } : {}),
+  ...(serverConfig ? { server: serverConfig } : {}),
   agents: { leadIntake: leadIntakeAgent },
   scorers: { hallucinationScorer, promptAlignmentScorer, urgencyScorer },
   mcpServers: { baseMcp: mcpServer },
