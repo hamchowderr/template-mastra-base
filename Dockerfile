@@ -13,6 +13,9 @@ RUN npm ci
 COPY . .
 # --studio bundles the Studio SPA so it can be served self-hosted in production.
 RUN npx mastra build --studio
+# Bake Studio config: auto-detect server from same origin → no "enter URL" form,
+# works for any deploy domain with no per-deploy config.
+RUN node scripts/bake-studio.mjs
 
 # ─── Stage 2: runtime ─────────────────────────────────────────────
 FROM node:22-slim AS runtime
