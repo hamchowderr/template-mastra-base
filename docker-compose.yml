@@ -13,8 +13,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "4111:4111" # Coolify assigns the public domain to this service
+    # Only expose on the internal network — Coolify/Traefik routes the public
+    # domain to this service. Do NOT bind a host port here: binding 4111:4111
+    # collides ("address already in use") whenever another agent stack is also
+    # deployed on the same host. Local host access is via docker-compose.override.yml.
+    expose:
+      - "4111"
     env_file:
       - .env
     environment:
