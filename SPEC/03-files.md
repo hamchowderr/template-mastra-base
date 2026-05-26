@@ -252,6 +252,90 @@ export function getSupabaseForUser(accessToken: string): SupabaseClient {
 
 ---
 
+## `src/mastra/lib/processors.ts`
+
+**Purpose**: One shared input/output processor baseline every agent spreads in, so the whole fleet has the same safety/hygiene layer instead of each agent reinventing it.
+
+**Design rule (do not relitigate)**: only the two **deterministic, no-LLM** processors are active by default — `UnicodeNormalizer` (input) and `TokenLimiter` (output). The five model-backed safety processors (`ModerationProcessor`, `PromptInjectionDetector`, `PIIDetector`, `LanguageDetector`, `SystemPromptScrubber`) each construct their own agent and make their own LLM call; enabling all of them turns one request into ~6 sequential LLM calls. They — plus behavior-changing ones (`ToolCallFilter`, `StructuredOutputProcessor`, `BatchPartsProcessor`) — ship **present-but-commented** as opt-in, with a one-line rationale each. Do not enable them by default.
+
+**Implementation**:
+
+```typescript
+import type { InputProcessorOrWorkflow, OutputProcessorOrWorkflow } from '@mastra/core/processors';
+import { UnicodeNormalizer, TokenLimiter } from '@mastra/core/processors';
+
+export const DEFAULT_OUTPUT_TOKEN_LIMIT = 8000;
+
+export const defaultInputProcessors: InputProcessorOrWorkflow[] = [
+  new UnicodeNormalizer({ stripControlChars: true, collapseWhitespace: true }),
+  // OPT-IN (each = one extra LLM call), uncomment + add a model to enable:
+  // new PromptInjectionDetector({ model: 'anthropic/claude-haiku-4-5' }),
+  // new ModerationProcessor({ model: 'anthropic/claude-haiku-4-5' }),
+  // new PIIDetector({ model: 'anthropic/claude-haiku-4-5', strategy: 'redact' }),
+];
+
+export const defaultOutputProcessors: OutputProcessorOrWorkflow[] = [
+  new TokenLimiter({ limit: DEFAULT_OUTPUT_TOKEN_LIMIT, strategy: 'truncate' }),
+  // OPT-IN:
+  // new SystemPromptScrubber({ model: 'anthropic/claude-haiku-4-5' }),
+  // new ToolCallFilter({ exclude: [] }),
+];
+```
+
+(See the actual file for the full commented opt-in list and the file-header rationale.)
+
+**Acceptance criteria**:
+- Typecheck passes; both arrays export with the correct `InputProcessorOrWorkflow[]` / `OutputProcessorOrWorkflow[]` types.
+- Only `UnicodeNormalizer` and `TokenLimiter` are active; everything else is commented.
+- These are NOT memory processors — adding them does not suppress Mastra's auto-added `MessageHistory` / `WorkingMemory` processors.
+
+---
+
+## `src/mastra/lib/memory.ts`
+
+**Purpose**: One shared `Memory` factory so every agent that has memory uses the same policy.
+
+**Design rule (do not relitigate)**: working memory **ON**, `scope: 'resource'` (persists per user across threads). Semantic recall **OFF** — it adds an embed + vector-query per turn and needs a `vector` store + `embedder` this template doesn't configure. Pass no `storage` — Memory inherits the Mastra instance's `PostgresStore` (Supabase), which supports the `mastra_resources` table resource-scoping requires.
+
+**Implementation**:
+
+```typescript
+import { Memory } from '@mastra/memory';
+
+export const DEFAULT_WORKING_MEMORY_TEMPLATE = `# User Profile
+
+## Identity
+- Name:
+- Role / Company:
+
+## Preferences
+- Communication style: [e.g., concise, detailed]
+- Constraints / things to avoid:
+
+## Session State
+- Current goal:
+- Open items:
+`;
+
+export function createDefaultMemory(
+  template: string = DEFAULT_WORKING_MEMORY_TEMPLATE,
+): Memory {
+  return new Memory({
+    options: {
+      workingMemory: { enabled: true, scope: 'resource', template },
+      // semanticRecall: intentionally off
+    },
+  });
+}
+```
+
+**Acceptance criteria**:
+- Typecheck passes.
+- Agents use `memory: createDefaultMemory()` (NOT bare `new Memory()`).
+- Working memory only persists per user when the caller passes `memory: { thread, resource }` — document this contract in `README.md`.
+
+---
+
 ## `src/mastra/index.ts`
 
 **Purpose**: Mastra entry point. Strict boot order; replaces the scaffolded version.
@@ -281,7 +365,6 @@ export function getSupabaseForUser(accessToken: string): SupabaseClient {
 ```typescript
 import { Agent } from '@mastra/core/agent';
 import { createTool } from '@mastra/core/tools';
-import { Memory } from '@mastra/memory';
 import { z } from 'zod';
 
 import {
@@ -289,6 +372,8 @@ import {
   completenessScorer,
   urgencyScorer,
 } from '../scorers/_example.scorers';
+import { createDefaultMemory } from '../lib/memory';
+import { defaultInputProcessors, defaultOutputProcessors } from '../lib/processors';
 
 /**
  * # Lead Intake Agent (canonical example)
@@ -370,7 +455,9 @@ Rules:
 Return only the structured output — no preamble, no commentary.`,
   model: 'anthropic/claude-sonnet-4-6',
   tools: { validateEmail },
-  memory: new Memory(),
+  memory: createDefaultMemory(),
+  inputProcessors: defaultInputProcessors,
+  outputProcessors: defaultOutputProcessors,
   scorers: {
     hallucination: {
       scorer: hallucinationScorer,

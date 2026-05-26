@@ -30,6 +30,8 @@ template-mastra-base/
 │       ├── index.ts                      # Mastra entry point with strict boot order
 │       ├── lib/
 │       │   ├── aimock.ts                 # AIMock provider switch
+│       │   ├── memory.ts                 # createDefaultMemory() — working memory baseline
+│       │   ├── processors.ts             # Shared default input/output processors
 │       │   └── supabase.ts               # Anon / service-role / per-user clients
 │       ├── scorers/
 │       │   ├── _example.scorers.ts       # Scorer registrations for lead-intake
@@ -103,8 +105,10 @@ Delete all four. Update `src/mastra/index.ts` to remove their imports and regist
 | Env loader | `src/lib/env.ts` | Zod schema. Crashes on misconfig. |
 | Mastra entry point | `src/mastra/index.ts` | Strict boot: env → AIMock switch → Mastra (with logger, observability, composite store, agents, scorers) |
 | AIMock switch | `src/mastra/lib/aimock.ts` | When `USE_AIMOCK=true`, rewrite LLM provider base URLs before any client constructs |
+| Memory baseline | `src/mastra/lib/memory.ts` | `createDefaultMemory()` factory: working memory ON (resource-scoped), semantic recall OFF |
+| Processor baseline | `src/mastra/lib/processors.ts` | `defaultInputProcessors` (UnicodeNormalizer) + `defaultOutputProcessors` (TokenLimiter); model-backed safety processors present-but-commented (opt-in) |
 | Supabase factory | `src/mastra/lib/supabase.ts` | Three named functions: `getSupabaseAnon`, `getSupabaseService`, `getSupabaseForUser` |
-| Example agent | `src/mastra/agents/_example.ts` | Canonical lead-intake agent. Registers scorers with `sampling: { type: 'ratio', rate: 1 }` |
+| Example agent | `src/mastra/agents/_example.ts` | Canonical lead-intake agent. Uses `createDefaultMemory()` + the shared processors. Registers scorers with `sampling: { type: 'ratio', rate: 1 }` |
 | Scorer registrations | `src/mastra/scorers/_example.scorers.ts` | Two prebuilt + one custom scorer for lead-intake |
 | CI dataset | `src/mastra/scorers/datasets/_example.json` | Canonical inputs + thresholds for offline eval |
 | Eval runner | `scripts/eval.ts` | Loads dataset, invokes agent, runs scorers, asserts thresholds, exit 0/1 |
