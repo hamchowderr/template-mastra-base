@@ -10,13 +10,24 @@ const envSchema = z
     LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
     APP_SECRET: z.string().min(32, 'APP_SECRET must be at least 32 chars'),
 
-    SUPABASE_URL: z.string().url(),
-    SUPABASE_ANON_KEY: z.string().min(1),
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    // Supabase client vars are optional — only needed if you wire up the
+    // Supabase auth/RLS client. Plain Postgres (the compose `postgres` service)
+    // only needs SUPABASE_DB_URL below.
+    SUPABASE_URL: z.string().url().optional(),
+    SUPABASE_ANON_KEY: z.string().min(1).optional(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     SUPABASE_DB_URL: z
       .string()
       .url()
       .refine((v) => v.startsWith('postgres'), 'Must be a postgres:// connection string'),
+
+    // Dolt (versioned business data) — the compose `dolt` service. Optional so
+    // the app boots without Dolt; the Dolt tools error clearly if it's missing.
+    DOLT_HOST: z.string().optional(),
+    DOLT_PORT: z.coerce.number().int().optional(),
+    DOLT_USER: z.string().optional(),
+    DOLT_PASSWORD: z.string().optional(),
+    DOLT_DATABASE: z.string().optional(),
 
     ANTHROPIC_API_KEY: z.string().optional(),
     OPENAI_API_KEY: z.string().optional(),

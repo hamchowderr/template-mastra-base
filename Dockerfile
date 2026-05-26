@@ -11,7 +11,8 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npx mastra build
+# --studio bundles the Studio SPA so it can be served self-hosted in production.
+RUN npx mastra build --studio
 
 # ─── Stage 2: runtime ─────────────────────────────────────────────
 FROM node:22-slim AS runtime
@@ -27,6 +28,9 @@ RUN groupadd -g 1001 nodejs && \
 
 ENV NODE_ENV=production
 ENV PORT=4111
+# Serve the bundled Studio UI (chat, traces, editor) from the same server.
+# Secure it behind auth before exposing publicly (see Mastra Studio auth docs).
+ENV MASTRA_STUDIO_PATH=/app/.mastra/output/studio
 
 COPY --from=build --chown=mastra:nodejs /app/.mastra/output ./.mastra/output
 
